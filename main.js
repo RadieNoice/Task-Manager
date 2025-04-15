@@ -304,11 +304,18 @@ ipcMain.handle("get-process-details", async (e, pid) => {
 });
 
 // Add handler for terminating processes
-ipcMain.handle("terminate-process", async (e, pid) => {
+ipcMain.handle("terminateProcess", async (e, pid) => {
   try {
     process.kill(pid);
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error(`Error terminating process ${pid}:`, error.message);
+
+    // Return a structured error response with more detailed information
+    return {
+      success: false,
+      error: error.message,
+      code: error.code || "UNKNOWN",
+    };
   }
 });

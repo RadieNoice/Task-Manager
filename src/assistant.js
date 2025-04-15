@@ -114,15 +114,17 @@ export function initAssistant({ input, runBtn, listenBtn, status }) {
   });
 
   micButton.addEventListener("click", function () {
+    // Use the correct global reference for browsers
     const SpeechRec =
       window.SpeechRecognition || window.webkitSpeechRecognition;
+
     if (!SpeechRec) {
       statusEl.innerText =
-        "⚠️ Speech Recognition not supported in this browser";
+        "⚠️ Speech Recognition not supported in this browser. Try using Chrome or Edge.";
       return;
     }
 
-    // Cancel any existing recognition session
+    // Clear previous recognition state
     if (this.recognizer) {
       try {
         this.recognizer.abort();
@@ -137,7 +139,7 @@ export function initAssistant({ input, runBtn, listenBtn, status }) {
 
     if (!this.listening) {
       statusEl.innerText = "Speech recognition stopped";
-      micButton.textContent = "Listen";
+      micButton.innerHTML = '<i class="fas fa-microphone"></i>';
       return;
     }
 
@@ -155,7 +157,8 @@ export function initAssistant({ input, runBtn, listenBtn, status }) {
       // Set up event handlers
       recognizer.onstart = () => {
         statusEl.innerText = "🎙️ Listening...";
-        micButton.textContent = "Stop";
+        micButton.innerHTML = '<i class="fas fa-stop"></i>';
+        console.log("Speech recognition started successfully");
       };
 
       recognizer.onerror = (evt) => {
@@ -166,17 +169,25 @@ export function initAssistant({ input, runBtn, listenBtn, status }) {
           statusEl.innerHTML =
             "❌ Network error: Check your internet connection";
           console.log("Network error details:", evt);
+        } else if (
+          evt.error === "not-allowed" ||
+          evt.error === "permission-denied"
+        ) {
+          statusEl.innerText =
+            "❌ Microphone permission denied. Please allow microphone access.";
+        } else if (evt.error === "no-speech") {
+          statusEl.innerText = "⚠️ No speech detected. Try speaking again.";
         } else {
           statusEl.innerText = `❌ Error: ${evt.error}`;
         }
 
-        micButton.textContent = "Listen";
+        micButton.innerHTML = '<i class="fas fa-microphone"></i>';
         this.listening = false;
         this.recognizer = null;
       };
 
       recognizer.onend = () => {
-        micButton.textContent = "Listen";
+        micButton.innerHTML = '<i class="fas fa-microphone"></i>';
         if (this.listening) {
           statusEl.innerText = "Speech recognition ended";
           this.listening = false;
@@ -202,6 +213,7 @@ export function initAssistant({ input, runBtn, listenBtn, status }) {
 
       // Start recognition with error handling
       try {
+        console.log("Attempting to start speech recognition...");
         recognizer.start();
       } catch (e) {
         console.error("Failed to start speech recognition:", e);

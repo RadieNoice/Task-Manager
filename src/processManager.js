@@ -690,18 +690,24 @@ function handleTableHeaderClick(e) {
 
 // Handle lowering process priority
 async function handleLowerPriority() {
-  const sel = document.querySelector("tr.selected");
+  const sel = pidTableBody.querySelector("tr.selected");
   if (!sel) {
     alert("⚠️ Please select a process row first.");
     return;
   }
 
   const pid = Number(sel.dataset.pid);
-  setStatus(`⚙️ Lowering priority for PID ${pid}...`);
+  // Get the process name from the corresponding name cell
+  const nameRow = nameTableBody.querySelector(`tr[data-pid="${pid}"]`);
+  const processName = nameRow
+    ? nameRow.textContent.trim().split(" (x")[0]
+    : "Unknown";
+
+  setStatus(`⚙️ Lowering priority for PID ${pid} (${processName})...`);
   try {
     const res = await window.api.lowerPriority(pid);
     if (res.success) {
-      setStatus(`✅ Priority lowered for PID ${pid}`);
+      setStatus(`✅ Priority lowered for ${processName} (PID: ${pid})`);
     } else {
       alert(`🚨 Error: ${res.error}`);
       setStatus(`❌ Failed to lower priority for PID ${pid}`);
@@ -716,14 +722,18 @@ async function handleLowerPriority() {
 
 // Handle process termination
 async function handleTerminateProcess() {
-  const sel = document.querySelector("tr.selected");
+  const sel = pidTableBody.querySelector("tr.selected");
   if (!sel) {
     alert("⚠️ Please select a process row first.");
     return;
   }
 
   const pid = Number(sel.dataset.pid);
-  const processName = sel.querySelector("td:nth-child(2)").textContent;
+  // Get the process name from the corresponding name cell
+  const nameRow = nameTableBody.querySelector(`tr[data-pid="${pid}"]`);
+  const processName = nameRow
+    ? nameRow.textContent.trim().split(" (x")[0]
+    : "Unknown";
 
   if (
     confirm(
@@ -736,12 +746,30 @@ async function handleTerminateProcess() {
       if (res.success) {
         setStatus(`✅ Process ${pid} terminated successfully`);
       } else {
-        alert(`🚨 Error: ${res.error}`);
-        setStatus(`❌ Failed to terminate process ${pid}`);
+        // More descriptive error message
+        if (res.error && res.error.includes("EPERM")) {
+          alert(
+            `🔒 Permission denied: You don't have permission to terminate ${processName} (PID: ${pid}).\n\nThis may be a system process or a process running with higher privileges.`
+          );
+          setStatus(
+            `❌ Permission denied terminating ${processName} (PID: ${pid})`
+          );
+        } else {
+          alert(`🚨 Error: ${res.error}`);
+          setStatus(`❌ Failed to terminate process ${pid}`);
+        }
       }
     } catch (e) {
       console.error("❌ terminateProcess error:", e);
-      alert(`🚨 Unexpected error: ${e.message}`);
+      if (e.message && e.message.includes("EPERM")) {
+        alert(
+          `🔒 Permission denied: You don't have permission to terminate ${processName} (PID: ${pid}).\n\nThis may be a system process or a process running with higher privileges.`
+        );
+        setStatus(`❌ Permission denied terminating ${processName}`);
+      } else {
+        alert(`🚨 Unexpected error: ${e.message || "Unknown error"}`);
+        setStatus(`❌ Error: ${e.message || "Unknown error"}`);
+      }
     }
     await refreshProcesses();
   }
@@ -835,11 +863,32 @@ async function showProcessDetails(pid) {
       .addEventListener("click", async () => {
         if (confirm(`Are you sure you want to terminate this process?`)) {
           try {
-            await window.api.terminateProcess(pid);
-            document.body.removeChild(modal);
-            await refreshProcesses();
+            const result = await window.api.terminateProcess(pid);
+            if (result.success) {
+              document.body.removeChild(modal);
+              setStatus(`✅ Process ${pid} terminated successfully`);
+              await refreshProcesses();
+            } else {
+              if (result.error && result.error.includes("EPERM")) {
+                alert(
+                  `🔒 Permission denied: You don't have permission to terminate this process.\n\nThis may be a system process or a process running with higher privileges.`
+                );
+                setStatus(`❌ Permission denied terminating process ${pid}`);
+              } else {
+                alert(`Error terminating process: ${result.error}`);
+                setStatus(`❌ Failed to terminate process: ${result.error}`);
+              }
+            }
           } catch (err) {
-            alert(`Error terminating process: ${err.message}`);
+            if (err.message && err.message.includes("EPERM")) {
+              alert(
+                `🔒 Permission denied: You don't have permission to terminate this process.\n\nThis may be a system process or a process running with higher privileges.`
+              );
+              setStatus(`❌ Permission denied terminating process ${pid}`);
+            } else {
+              alert(`Error terminating process: ${err.message}`);
+              setStatus(`❌ Failed to terminate process: ${err.message}`);
+            }
           }
         }
       });
