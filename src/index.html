@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI‑Enhanced Smart Task Manager</title>
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <h1><i class="fas fa-microchip"></i> AI‑Enhanced Smart Task Manager</h1>
+        <div class="system-info">
+          <span id="osInfo"><i class="fas fa-desktop"></i> Windows</span>
+          <span id="dateTime"><i class="far fa-clock"></i> Loading...</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Dashboard -->
+      <section class="card dashboard">
+        <h2><i class="fas fa-chart-line"></i> System Dashboard</h2>
+        <div class="system-metrics">
+          <div class="metric-card">
+            <div class="metric-header">
+              <i class="fas fa-tachometer-alt"></i>
+              <span>CPU Usage</span>
+            </div>
+            <div class="metric-value" id="cpuValue">--%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <i class="fas fa-memory"></i>
+              <span>Memory Usage</span>
+            </div>
+            <div class="metric-value" id="memValue">--%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <i class="fas fa-tasks"></i>
+              <span>Processes</span>
+            </div>
+            <div class="metric-value" id="processCount">--</div>
+          </div>
+        </div>
+        <div class="charts">
+          <div class="chart-container">
+            <canvas id="cpuChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <canvas id="memChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Process Manager -->
+      <section class="card process-manager">
+        <h2><i class="fas fa-list-ul"></i> Process Manager</h2>
+        <div class="controls">
+          <button id="refreshBtn" class="btn-primary">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+          <button id="lowerBtn" class="btn-secondary">
+            <i class="fas fa-arrow-down"></i> Lower Priority
+          </button>
+          <button id="terminateBtn" class="btn-danger">
+            <i class="fas fa-times-circle"></i> Terminate
+          </button>
+        </div>
+        <div class="search-container">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search processes..."
+          />
+          <button id="clearSearch" title="Clear search">✕</button>
+        </div>
+        <div class="table-wrapper">
+          <div id="procTables" class="proc-tables">
+            <div class="proc-table-column pid-column">
+              <table id="pidTable">
+                <thead>
+                  <tr>
+                    <th data-sort="pid"><i class="fas fa-hashtag"></i> PIDs</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="proc-table-column name-column">
+              <table id="nameTable">
+                <thead>
+                  <tr>
+                    <th data-sort="name">
+                      <i class="fas fa-file-code"></i> Name
+                    </th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="proc-table-column cpu-column">
+              <table id="cpuTable">
+                <thead>
+                  <tr>
+                    <th data-sort="cpu">
+                      <i class="fas fa-microchip"></i> CPU %
+                    </th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="proc-table-column memory-column">
+              <table id="memoryTable">
+                <thead>
+                  <tr>
+                    <th data-sort="memory">
+                      <i class="fas fa-memory"></i> Memory %
+                    </th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="proc-table-column status-column">
+              <table id="statusTable">
+                <thead>
+                  <tr>
+                    <th><i class="fas fa-info-circle"></i> Status</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="table-footer">
+          <span id="processInfo">0 processes</span>
+          <div class="pagination">
+            <button id="prevPage" disabled>
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span id="pageInfo">Page 1</span>
+            <button id="nextPage" disabled>
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Virtual Assistant -->
+      <section class="card assistant">
+        <h2><i class="fas fa-robot"></i> Virtual Assistant</h2>
+        <div class="assistant-messages" id="assistantMessages">
+          <div class="message system">
+            <i class="fas fa-robot"></i>
+            <div class="message-content">
+              <p>Hello! I can help you manage your system. Try asking me:</p>
+              <ul>
+                <li>"What's using the most CPU?"</li>
+                <li>"Kill process chrome.exe"</li>
+                <li>"Lower priority of notepad"</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="assistant-controls">
+          <input id="cmdInput" placeholder="Ask the assistant..." />
+          <button id="runBtn" class="btn-primary">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+          <button id="listenBtn" class="btn-secondary">
+            <i class="fas fa-microphone"></i>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <div id="status"><i class="fas fa-info-circle"></i> Ready</div>
+
+    <!-- scripts -->
+    <script src="../node_modules/chart.js/dist/chart.umd.js"></script>
+    <script src="systemDashboard.js"></script>
+    <script src="processManager.js"></script>
+
+    <!-- Load ES modules properly -->
+    <script type="module" src="renderer.js"></script>
+
+    <!-- Add this script to update the date/time in the header -->
+    <script>
+      function updateDateTime() {
+        const now = new Date();
+        document.getElementById(
+          "dateTime"
+        ).innerHTML = `<i class="far fa-clock"></i> ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+        setTimeout(updateDateTime, 1000);
+      }
+      document.addEventListener("DOMContentLoaded", updateDateTime);
+    </script>
+  </body>
+</html>

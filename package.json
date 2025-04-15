@@ -1,0 +1,19 @@
+{
+  "name": "electron-ai-task-manager",
+  "version": "1.0.0",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "chart.js": "^4.0.0",
+    "network-speed": "^2.1.1",
+    "pidusage": "^3.0.0",
+    "ps-list": "^8.0.0",
+    "say": "^0.16.0"
+  },
+  "devDependencies": {
+    "electron": "^25.0.0"
+  }
+}

@@ -1,0 +1,40 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# VSCode settings
+.vscode/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Electron cache & user data
+.cache/
+electron-builder.yaml
+*.pid
+
+# Test coverage
+coverage/
+
+# Others
+*.log
+.idea/
+*.swp
+*.swo
+
+# Windows specific
+*.lnk
