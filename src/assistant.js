@@ -113,117 +113,118 @@ export function initAssistant({ input, runBtn, listenBtn, status }) {
     runCmd(cmd);
   });
 
-  micButton.addEventListener("click", function () {
-    // Use the correct global reference for browsers
-    const SpeechRec =
+  micButton.addEventListener("click", async function () {
+    // Check for Speech Recognition API support
+    const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRec) {
+    if (!SpeechRecognition) {
       statusEl.innerText =
-        "⚠️ Speech Recognition not supported in this browser. Try using Chrome or Edge.";
+        "⚠️ Speech Recognition not supported in your browser. Please try Chrome or Edge.";
       return;
     }
 
-    // Clear previous recognition state
-    if (this.recognizer) {
-      try {
-        this.recognizer.abort();
-      } catch (e) {
-        console.error("Error stopping previous recognition:", e);
-      }
-      this.recognizer = null;
-    }
+    // Skip internet connection check - assume we're online
+    // since requiring electron in the renderer won't work with contextIsolation
+    let isOnline = true;
 
     // Toggle listening state
     this.listening = !this.listening;
 
     if (!this.listening) {
+      // If we're stopping an active recognition session
+      if (this.recognizer) {
+        try {
+          this.recognizer.stop();
+        } catch (e) {
+          console.error("Error stopping recognition:", e);
+        }
+      }
       statusEl.innerText = "Speech recognition stopped";
       micButton.innerHTML = '<i class="fas fa-microphone"></i>';
       return;
     }
 
-    // Create new recognizer
+    // Start speech recognition
+    statusEl.innerText = "🎙️ Listening...";
+    micButton.innerHTML = '<i class="fas fa-stop"></i>';
+
     try {
-      const recognizer = new SpeechRec();
+      const recognizer = new SpeechRecognition();
       this.recognizer = recognizer;
 
-      // Configure the recognizer
-      recognizer.lang = "en-US"; // Force English to improve reliability
+      recognizer.lang = "en-US";
       recognizer.continuous = false;
       recognizer.interimResults = false;
       recognizer.maxAlternatives = 1;
 
-      // Set up event handlers
-      recognizer.onstart = () => {
-        statusEl.innerText = "🎙️ Listening...";
-        micButton.innerHTML = '<i class="fas fa-stop"></i>';
-        console.log("Speech recognition started successfully");
+      recognizer.onresult = (event) => {
+        try {
+          const transcript = event.results[0][0].transcript
+            .trim()
+            .toLowerCase();
+          console.log("Speech recognized:", transcript);
+          statusEl.innerText = `🗣️ Recognized: "${transcript}"`;
+          cmdInput.value = transcript;
+          runCmd(transcript);
+        } catch (err) {
+          console.error("Error processing speech result:", err);
+          statusEl.innerText = "❌ Error processing speech. Please try again.";
+        }
       };
 
-      recognizer.onerror = (evt) => {
-        console.error("Speech recognition error:", evt);
+      recognizer.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
 
-        // Handle network error specifically
-        if (evt.error === "network") {
-          statusEl.innerHTML =
-            "❌ Network error: Check your internet connection";
-          console.log("Network error details:", evt);
-        } else if (
-          evt.error === "not-allowed" ||
-          evt.error === "permission-denied"
-        ) {
+        // Handle specific error types
+        if (event.error === "not-allowed") {
           statusEl.innerText =
-            "❌ Microphone permission denied. Please allow microphone access.";
-        } else if (evt.error === "no-speech") {
-          statusEl.innerText = "⚠️ No speech detected. Try speaking again.";
+            "❌ Microphone access denied. Please allow microphone access in settings.";
+        } else if (event.error === "network") {
+          statusEl.innerText =
+            "❌ Network error. Please try again or check internet connection.";
+        } else if (event.error === "no-speech") {
+          statusEl.innerText =
+            "⚠️ No speech detected. Please try again and speak clearly.";
         } else {
-          statusEl.innerText = `❌ Error: ${evt.error}`;
+          statusEl.innerText = `❌ Error: ${event.error}. Please try again.`;
         }
 
         micButton.innerHTML = '<i class="fas fa-microphone"></i>';
         this.listening = false;
-        this.recognizer = null;
       };
 
       recognizer.onend = () => {
+        console.log("Speech recognition ended");
         micButton.innerHTML = '<i class="fas fa-microphone"></i>';
-        if (this.listening) {
+
+        // Only update status if we're still in the listening state
+        if (this.listening && statusEl.innerText === "🎙️ Listening...") {
           statusEl.innerText = "Speech recognition ended";
-          this.listening = false;
         }
-        this.recognizer = null;
-      };
 
-      recognizer.onresult = (evt) => {
-        try {
-          const transcript = evt.results[0][0].transcript.trim().toLowerCase();
-          statusEl.innerText = `🗣️ Recognized: "${transcript}"`;
-          cmdInput.value = transcript;
-
-          // Only run the command if we got a valid transcript
-          if (transcript) {
-            runCmd(transcript);
-          }
-        } catch (e) {
-          console.error("Error processing speech result:", e);
-          statusEl.innerText = "❌ Error processing speech";
-        }
-      };
-
-      // Start recognition with error handling
-      try {
-        console.log("Attempting to start speech recognition...");
-        recognizer.start();
-      } catch (e) {
-        console.error("Failed to start speech recognition:", e);
-        statusEl.innerText = `❌ Failed to start speech recognition: ${e.message}`;
         this.listening = false;
-        this.recognizer = null;
-      }
-    } catch (e) {
-      console.error("Error initializing speech recognition:", e);
-      statusEl.innerText = `❌ Error initializing speech recognition: ${e.message}`;
+      };
+
+      // Add automatic timeout to avoid getting stuck in listening mode
+      setTimeout(() => {
+        if (this.listening && recognizer) {
+          try {
+            recognizer.stop();
+          } catch (e) {
+            console.warn("Error stopping recognition on timeout:", e);
+          }
+        }
+      }, 10000); // 10 second timeout
+
+      // Start recognition
+      recognizer.start();
+      console.log("Speech recognition started");
+    } catch (error) {
+      console.error("Failed to initialize speech recognition:", error);
+      statusEl.innerText =
+        "❌ Speech recognition failed to start. Please try again.";
+      micButton.innerHTML = '<i class="fas fa-microphone"></i>';
       this.listening = false;
     }
   });

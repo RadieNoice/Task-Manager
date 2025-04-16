@@ -400,8 +400,28 @@ function filterProcesses(searchTerm) {
 
   if (Object.keys(filtered).length === 0) {
     showEmptyProcessMessage(`No processes match your search: "${searchTerm}"`);
+    setStatus(`🔍 No processes match your search: "${searchTerm}"`);
   } else {
     renderTable(filtered);
+
+    // Add highlight class to all rows for visual feedback
+    setTimeout(() => {
+      document
+        .querySelectorAll(
+          "#pidTable tbody tr, #nameTable tbody tr, #cpuTable tbody tr, #memoryTable tbody tr, #statusTable tbody tr"
+        )
+        .forEach((row) => {
+          row.classList.add("search-highlight");
+        });
+    }, 10);
+
+    // Update status to show search results
+    const count = Object.keys(filtered).length;
+    setStatus(
+      `🔍 Found ${count} ${
+        count === 1 ? "process" : "processes"
+      } matching "${searchTerm}"`
+    );
   }
 }
 

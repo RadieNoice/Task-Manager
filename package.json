@@ -9,6 +9,8 @@
   "dependencies": {
     "chart.js": "^4.0.0",
     "network-speed": "^2.1.1",
+    "node-record-lpcm16": "^1.0.1",
+    "node-vad": "^1.1.4",
     "pidusage": "^3.0.0",
     "ps-list": "^8.0.0",
     "say": "^0.16.0"
